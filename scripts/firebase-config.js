@@ -13,8 +13,8 @@ let firebaseOps = null;
 
 export async function initFirebase() {
   try {
-    const { initializeApp } = await import('firebase/app');
-    const dbModule = await import('firebase/database');
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js');
+    const dbModule = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js');
     const app = initializeApp(FIREBASE_CONFIG);
     db = dbModule.getDatabase(app);
     firebaseOps = {

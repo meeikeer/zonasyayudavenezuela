@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,8 @@
 
   <!-- Tailwind CSS -->
   <script>
-    tailwind.config = {
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
       theme: {
         extend: {
           colors: {
@@ -27,15 +28,6 @@
   <!-- Estilos personalizados -->
   <link rel="stylesheet" href="styles/main.css">
 
-  <!-- Import Map para Firebase modular SDK -->
-  <script type="importmap">
-  {
-    "imports": {
-      "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
-      "firebase/database": "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"
-    }
-  }
-  </script>
 </head>
 <body class="flex flex-col h-full bg-gray-50">
 

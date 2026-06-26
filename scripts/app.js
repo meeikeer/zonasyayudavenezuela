@@ -380,11 +380,14 @@ onMapClick((coords) => {
 
 // ─── Botones ─────────────────────────────────────────────────────
 
-document.getElementById('btn-agregar').addEventListener('click', () => {
-  const estado = document.getElementById('estado-select').value;
-  if (!estado) { toast('Selecciona un estado primero', 'error'); return; }
-  abrirModal('create');
-});
+const btnAgregar = document.getElementById('btn-agregar');
+if (btnAgregar) {
+  btnAgregar.addEventListener('click', () => {
+    const estado = document.getElementById('estado-select').value;
+    if (!estado) { toast('Selecciona un estado primero', 'error'); return; }
+    abrirModal('create');
+  });
+}
 
 document.getElementById('btn-mi-ubicacion').addEventListener('click', () => {
   if (!navigator.geolocation) { toast('Geolocalización no soportada', 'error'); return; }
@@ -410,21 +413,30 @@ document.getElementById('btn-mi-ubicacion').addEventListener('click', () => {
 // 2. Luego intenta conectar Firebase; si falla, todo funciona en modo demo local
 
 function init() {
-  poblarEstados();
+  try {
+    poblarEstados();
 
-  const params = new URLSearchParams(window.location.search);
-  const estadoParam = params.get('estado');
-  if (estadoParam && ESTADOS_VENEZUELA.includes(estadoParam)) {
-    document.getElementById('estado-select').value = estadoParam;
+    const params = new URLSearchParams(window.location.search);
+    const estadoParam = params.get('estado');
+    if (estadoParam && ESTADOS_VENEZUELA.includes(estadoParam)) {
+      document.getElementById('estado-select').value = estadoParam;
+    }
+
+    initMap('map');
+    console.log('Mapa Solidario iniciado');
+
+    const estadoInicial = document.getElementById('estado-select').value;
+    initFirebase().then(() => {
+      if (estadoInicial) seleccionarEstado(estadoInicial);
+    });
+  } catch (e) {
+    console.error('Error en init():', e);
+    const body = document.body;
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;padding:12px;font-size:14px;z-index:999999;text-align:center';
+    div.textContent = 'Error: ' + e.message;
+    body.appendChild(div);
   }
-
-  initMap('map');
-  console.log('Mapa Solidario iniciado');
-
-  const estadoInicial = document.getElementById('estado-select').value;
-  initFirebase().then(() => {
-    if (estadoInicial) seleccionarEstado(estadoInicial);
-  });
 }
 
 init();
