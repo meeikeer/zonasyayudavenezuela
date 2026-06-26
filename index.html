@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zona y Ayuda - Venezuela</title>
+
+  <!-- Tailwind CSS -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            danger:  '#dc2626',
+            success: '#16a34a'
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- Import Map para Firebase modular SDK -->
+  <script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+      "firebase/database": "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"
+    }
+  }
+  </script>
+</head>
+<body class="flex flex-col h-full bg-gray-50">
+
+  <!-- TOSTADA -->
+  <div id="toast" class="toast"></div>
+
+  <!-- CABECERA -->
+  <header class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white shadow-sm border-b border-gray-200">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">📍</span>
+      <h1 class="text-lg font-bold text-gray-800 leading-tight">Mapa Solidario</h1>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+      <!-- BUSCADOR -->
+      <div class="flex items-center gap-1">
+        <input type="text" id="input-buscar"
+               placeholder="Buscar dirección..."
+               class="w-40 lg:w-56 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+        <button id="btn-buscar"
+                class="px-3 py-1.5 text-sm bg-primary hover:bg-blue-700 text-white rounded-lg transition">
+          Buscar
+        </button>
+      </div>
+      <label for="estado-select" class="text-sm font-medium text-gray-600">Estado:</label>
+      <select id="estado-select"
+              class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+      </select>
+      <button id="btn-mi-ubicacion"
+              class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 transition flex items-center gap-1.5">
+        <span>📍</span> Mi ubicación
+      </button>
+    </div>
+  </header>
+
+  <!-- MAPA -->
+  <main class="flex-1 relative">
+    <div id="map"></div>
+
+    <div id="loading-indicator"
+         class="absolute top-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow text-sm text-gray-600 transition-opacity duration-300" style="z-index: 1000;">
+      <span class="loading-dots">Cargando centros</span>
+    </div>
+  </main>
+
+  <!-- PANEL LATERAL -->
+  <button id="btn-panel-toggle"
+          class="fixed top-20 left-4 z-9998 w-10 h-10 bg-white hover:bg-gray-100 rounded-lg shadow flex items-center justify-center text-lg border border-gray-200 transition">
+    ☰
+  </button>
+  <div id="panel-lateral" class="panel-lateral">
+    <div class="panel-header">
+      <span id="panel-titulo" class="font-bold text-gray-800">Centros</span>
+      <button id="btn-panel-cerrar" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+    </div>
+    <div id="centros-lista" class="panel-lista">
+      <div class="text-gray-400 text-sm text-center py-8">Selecciona un estado</div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="modal-content p-6">
+      <div class="flex items-center justify-between mb-5">
+        <h2 id="modal-title" class="text-xl font-bold text-gray-800">Nuevo Centro</h2>
+        <button id="modal-close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      </div>
+
+      <form id="centro-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Estado</label>
+          <input type="text" id="form-estado" readonly
+                 class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Nombre del centro</label>
+          <input type="text" id="form-nombre" required
+                 placeholder="Ej: Escuela Básica Los Samanes"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Dirección</label>
+          <input type="text" id="form-direccion"
+                 placeholder="Ej: Av. Principal, sector Los Samanes"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Categoría</label>
+          <select id="form-categoria"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+            <option value="Acopio">📦 Centro de Acopio</option>
+            <option value="Refugio">🏠 Refugio</option>
+            <option value="Zona de Desastre">⚠️ Zona de Desastre</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Latitud</label>
+            <input type="text" id="form-lat" readonly
+                   class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-500 font-mono">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Longitud</label>
+            <input type="text" id="form-lng" readonly
+                   class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-500 font-mono">
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 -mt-2">* Haz clic en el mapa para capturar coordenadas</p>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Insumos</label>
+          <div id="insumos-container" class="flex flex-wrap gap-2 mb-2 min-h-[2rem]"></div>
+          <div class="flex gap-2">
+            <input type="text" id="form-nuevo-insumo"
+                   placeholder="Ej: Agua, medicinas, ropa..."
+                   class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();window.agregarInsumo()}">
+            <button type="button" onclick="window.agregarInsumo()"
+                    class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">
+              + Agregar
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="btn-eliminar"
+                  class="hidden px-4 py-2 bg-danger hover:bg-red-700 text-white rounded-lg text-sm font-medium transition">
+            Eliminar
+          </button>
+          <div class="flex-1"></div>
+          <button type="button" onclick="window.cerrarModal()"
+                  class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">
+            Cancelar
+          </button>
+          <button type="submit"
+                  id="btn-submit"
+                  class="px-5 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INFORMACIÓN DETALLADA -->
+  <div id="modal-detalle-overlay" class="modal-overlay">
+    <div class="modal-content p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="detalle-titulo" class="text-xl font-bold text-gray-800">Centro</h2>
+        <button id="detalle-cerrar" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      </div>
+      <div id="detalle-contenido" class="space-y-4">
+        <!-- Se puebla dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Entry point de la aplicación modular -->
+  <script type="module" src="scripts/app.js"></script>
+</body>
+</html>
