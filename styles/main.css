@@ -1,7 +1,3 @@
-/* ============================================================== */
-/*  ESTILOS BASE                                                  */
-/* ============================================================== */
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -9,11 +5,64 @@ html, body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-#map { position: absolute; inset: 0; }
+#map { min-height: 0; flex: 1; }
 
-/* ============================================================== */
-/*  MODAL (compartido)                                             */
-/* ============================================================== */
+.lista-centros {
+  width: 260px;
+  height: 100%;
+  background: white;
+  border-left: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 999;
+}
+
+.lista-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ccc;
+  flex-shrink: 0;
+}
+
+.lista-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.lista-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.lista-item:active {
+  background: #f0f0f0;
+}
+
+.lista-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lista-item-nombre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lista-item-flecha {
+  font-size: 1.25rem;
+  color: #9ca3af;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
 
 .modal-overlay {
   display: none;
@@ -21,7 +70,6 @@ html, body {
   inset: 0;
   z-index: 9999;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
   align-items: center;
   justify-content: center;
 }
@@ -30,17 +78,12 @@ html, body {
 
 .modal-content {
   background: white;
-  border-radius: 1rem;
+  border: 1px solid #ccc;
   width: 92%;
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
 }
-
-/* ============================================================== */
-/*  INSUMOS TAGS                                                  */
-/* ============================================================== */
 
 .insumo-tag {
   display: inline-flex;
@@ -52,7 +95,6 @@ html, body {
   border: 1px solid #d1d5db;
   background: #f3f4f6;
   cursor: pointer;
-  transition: all 0.15s;
   user-select: none;
 }
 
@@ -70,11 +112,7 @@ html, body {
   cursor: pointer;
 }
 
-.insumo-tag .remove:hover { color: #ef4444; }
-
-/* ============================================================== */
-/*  MARCADORES PERSONALIZADOS (Leaflet)                           */
-/* ============================================================== */
+.insumo-tag .remove { color: #ef4444; }
 
 .marcador-personalizado {
   background: none !important;
@@ -87,91 +125,8 @@ html, body {
   line-height: 1.4;
   padding: 8px 12px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: none;
+  border: 1px solid #ccc;
 }
-
-/* ============================================================== */
-/*  PANEL LATERAL                                                 */
-/* ============================================================== */
-
-.panel-lateral {
-  position: fixed;
-  top: 0; left: 0;
-  width: 300px;
-  max-width: 85vw;
-  height: 100%;
-  z-index: 9997;
-  background: white;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-lateral.active {
-  transform: translateX(0);
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e5e7eb;
-  flex-shrink: 0;
-}
-
-.panel-lista {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.5rem 0;
-}
-
-.panel-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.panel-item:hover {
-  background: #f9fafb;
-}
-
-.panel-item:active {
-  background: #f3f4f6;
-}
-
-.panel-item-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.panel-item-nombre {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.panel-item-flecha {
-  font-size: 1.25rem;
-  color: #9ca3af;
-  margin-left: 0.75rem;
-  flex-shrink: 0;
-}
-
-/* ============================================================== */
-/*  TOAST NOTIFICATIONS                                           */
-/* ============================================================== */
 
 .toast {
   position: fixed;
@@ -184,8 +139,6 @@ html, body {
   color: white;
   font-weight: 500;
   font-size: 0.9rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  transition: opacity 0.3s, transform 0.3s;
   opacity: 0;
   pointer-events: none;
 }
@@ -198,10 +151,6 @@ html, body {
 .toast.success { background: #16a34a; }
 .toast.error { background: #dc2626; }
 
-/* ============================================================== */
-/*  LOADING INDICATOR                                             */
-/* ============================================================== */
-
 .loading-dots::after {
   content: '';
   animation: dots 1.5s steps(4, end) infinite;
@@ -213,10 +162,6 @@ html, body {
   50%  { content: '..'; }
   75%  { content: '...'; }
 }
-
-/* ============================================================== */
-/*  BADGES                                                        */
-/* ============================================================== */
 
 .badge-acopio  { background: #dbeafe; color: #1d4ed8; }
 .badge-refugio { background: #dcfce7; color: #15803d; }

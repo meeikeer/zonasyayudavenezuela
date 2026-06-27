@@ -1,5 +1,4 @@
-import { initFirebase } from './firebase-config.js';
-import { escucharCentros, crearCentro, actualizarCentro, eliminarCentro } from './crud.js';
+import { escucharCentros, crearCentro, actualizarCentro, eliminarCentro, inicializarAlmacenamiento } from './crud.js';
 import { initMap, renderCentros, ajustarBounds, centrarMapa, getMap, buscarDireccion, onMarkerClick, onMapClick } from './maps.js';
 
 const ESTADOS_VENEZUELA = [
@@ -10,14 +9,10 @@ const ESTADOS_VENEZUELA = [
   'Táchira', 'Trujillo', 'La Guaira', 'Yaracuy', 'Zulia'
 ];
 
-// ─── Estado global ───────────────────────────────────────────────
-
 let cancelarEscucha = null;
 let editandoId = null;
 let insumos = [];
-let centrosActuales = {}; // { id: centro }
-
-// ─── Toast ───────────────────────────────────────────────────────
+let centrosActuales = {};
 
 function toast(msg, tipo = 'success') {
   const el = document.getElementById('toast');
@@ -31,8 +26,6 @@ function cargando(mostrar) {
   const el = document.getElementById('loading-indicator');
   if (el) el.style.opacity = mostrar ? '1' : '0';
 }
-
-// ─── Insumos UI ──────────────────────────────────────────────────
 
 function renderInsumos() {
   const container = document.getElementById('insumos-container');
@@ -73,8 +66,6 @@ window.agregarInsumo = function () {
   input.focus();
 };
 
-// ─── Modal de edición/creación ───────────────────────────────────
-
 function abrirModal(mode, data = null) {
   const overlay = document.getElementById('modal-overlay');
   const title = document.getElementById('modal-title');
@@ -112,12 +103,12 @@ function abrirModal(mode, data = null) {
   }
 
   renderInsumos();
-  overlay.classList.add('active');
+  overlay.style.display = 'flex';
   requestAnimationFrame(() => document.getElementById('form-nombre').focus());
 }
 
 window.cerrarModal = function () {
-  document.getElementById('modal-overlay').classList.remove('active');
+  document.getElementById('modal-overlay').style.display = 'none';
   editandoId = null;
 };
 
@@ -126,8 +117,6 @@ document.getElementById('modal-overlay').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) window.cerrarModal();
 });
 document.getElementById('modal-close').addEventListener('click', window.cerrarModal);
-
-// ─── Modal de información detallada ──────────────────────────────
 
 function abrirDetalle(id, centro) {
   const overlay = document.getElementById('modal-detalle-overlay');
@@ -167,29 +156,27 @@ function abrirDetalle(id, centro) {
     <div class="pt-3 flex flex-col gap-2">
       <a href="https://www.google.com/maps/search/?api=1&query=${centro.lat},${centro.lng}"
          target="_blank" rel="noopener"
-         class="block w-full text-center px-4 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+         class="block w-full text-center px-4 py-2.5 bg-black text-white rounded text-sm font-medium">
         🗺️ Cómo llegar con Google Maps
       </a>
-      <button onclick="document.getElementById('modal-detalle-overlay').classList.remove('active')"
-              class="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">
+      <button onclick="document.getElementById('modal-detalle-overlay').style.display='none'"
+              class="w-full px-4 py-2 border border-gray-400 rounded text-sm font-medium">
         Cerrar
       </button>
     </div>
   `;
 
-  overlay.classList.add('active');
+  overlay.style.display = 'flex';
 }
 
 document.getElementById('detalle-cerrar').addEventListener('click', () => {
-  document.getElementById('modal-detalle-overlay').classList.remove('active');
+  document.getElementById('modal-detalle-overlay').style.display = 'none';
 });
 document.getElementById('modal-detalle-overlay').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) {
-    document.getElementById('modal-detalle-overlay').classList.remove('active');
+    document.getElementById('modal-detalle-overlay').style.display = 'none';
   }
 });
-
-// ─── Formulario: guardar ────────────────────────────────────────
 
 document.getElementById('centro-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -211,19 +198,18 @@ document.getElementById('centro-form').addEventListener('submit', async (e) => {
   try {
     if (editandoId) {
       await actualizarCentro(estado, editandoId, centroData);
-      toast('Centro actualizado ✓');
     } else {
       await crearCentro(estado, centroData);
-      toast('Centro creado ✓');
     }
-    window.cerrarModal();
+    document.getElementById('modal-overlay').style.display = 'none';
+    document.getElementById('centro-form').reset();
+    insumos = [];
+    alert('Centro guardado con éxito');
   } catch (err) {
     console.error(err);
     toast('Error al guardar: ' + err.message, 'error');
   }
 });
-
-// ─── Eliminar ────────────────────────────────────────────────────
 
 document.getElementById('btn-eliminar').addEventListener('click', async () => {
   if (!editandoId) return;
@@ -238,8 +224,6 @@ document.getElementById('btn-eliminar').addEventListener('click', async () => {
     toast('Error al eliminar: ' + err.message, 'error');
   }
 });
-
-// ─── Selector de estado ─────────────────────────────────────────
 
 function poblarEstados() {
   const sel = document.getElementById('estado-select');
@@ -270,7 +254,7 @@ function seleccionarEstado(estado) {
   centrosActuales = {};
   if (!estado) { renderCentros({}); renderPanel({}); cargando(false); return; }
 
-  document.getElementById('panel-titulo').textContent = `Centros — ${estado}`;
+  document.getElementById('lista-titulo').textContent = `Centros — ${estado}`;
 
   cargando(true);
   cancelarEscucha = escucharCentros(estado, (data) => {
@@ -290,10 +274,8 @@ function seleccionarEstado(estado) {
   });
 }
 
-// ─── Panel lateral ───────────────────────────────────────────────
-
 function renderPanel(data) {
-  const lista = document.getElementById('centros-lista');
+  const lista = document.getElementById('lista-body');
   lista.innerHTML = '';
   const entries = Object.entries(data);
   if (entries.length === 0) {
@@ -304,35 +286,21 @@ function renderPanel(data) {
     const badgeClass = centro.categoria === 'Acopio' ? 'badge-acopio' :
                        centro.categoria === 'Refugio' ? 'badge-refugio' : 'badge-desastre';
     const item = document.createElement('div');
-    item.className = 'panel-item';
+    item.className = 'lista-item';
     item.innerHTML = `
-      <div class="panel-item-info">
-        <div class="panel-item-nombre">${centro.nombre}</div>
+      <div class="lista-item-info">
+        <div class="lista-item-nombre">${centro.nombre}</div>
         <span class="${badgeClass}" style="display:inline-block;padding:1px 10px;border-radius:999px;font-size:11px;font-weight:600">${centro.categoria}</span>
       </div>
-      <span class="panel-item-flecha">›</span>
+      <span class="lista-item-flecha">›</span>
     `;
     item.addEventListener('click', () => {
-      centrarMapa(centro.lat, centro.lng, 16);
+      centrarMapa(centro.lat, centro.lng, 15);
       abrirDetalle(id, centro);
-      cerrarPanel();
     });
     lista.appendChild(item);
   });
 }
-
-function abrirPanel() {
-  document.getElementById('panel-lateral').classList.add('active');
-}
-
-function cerrarPanel() {
-  document.getElementById('panel-lateral').classList.remove('active');
-}
-
-document.getElementById('btn-panel-toggle').addEventListener('click', abrirPanel);
-document.getElementById('btn-panel-cerrar').addEventListener('click', cerrarPanel);
-
-// ─── Buscador geográfico ─────────────────────────────────────────
 
 document.getElementById('btn-buscar').addEventListener('click', async () => {
   const input = document.getElementById('input-buscar');
@@ -367,27 +335,14 @@ document.getElementById('input-buscar').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-buscar').click();
 });
 
-// ─── Mapa: callbacks ─────────────────────────────────────────────
-
 onMarkerClick((id, centro) => abrirModal('edit', { id, ...centro }));
 
 onMapClick((coords) => {
-  if (document.getElementById('modal-overlay').classList.contains('active')) return;
+  if (document.getElementById('modal-overlay').style.display === 'flex') return;
   const estado = document.getElementById('estado-select').value;
   if (!estado) { toast('Selecciona un estado primero', 'error'); return; }
   abrirModal('create', coords);
 });
-
-// ─── Botones ─────────────────────────────────────────────────────
-
-const btnAgregar = document.getElementById('btn-agregar');
-if (btnAgregar) {
-  btnAgregar.addEventListener('click', () => {
-    const estado = document.getElementById('estado-select').value;
-    if (!estado) { toast('Selecciona un estado primero', 'error'); return; }
-    abrirModal('create');
-  });
-}
 
 document.getElementById('btn-mi-ubicacion').addEventListener('click', () => {
   if (!navigator.geolocation) { toast('Geolocalización no soportada', 'error'); return; }
@@ -408,10 +363,6 @@ document.getElementById('btn-mi-ubicacion').addEventListener('click', () => {
   );
 });
 
-// ─── Inicialización ─────────────────────────────────────────────
-// 1. Renderiza dropdown y mapa inmediatamente (no necesita Firebase)
-// 2. Luego intenta conectar Firebase; si falla, todo funciona en modo demo local
-
 function init() {
   try {
     poblarEstados();
@@ -423,19 +374,13 @@ function init() {
     }
 
     initMap('map');
-    console.log('Mapa Solidario iniciado');
 
     const estadoInicial = document.getElementById('estado-select').value;
-    initFirebase().then(() => {
+    inicializarAlmacenamiento().then(() => {
       if (estadoInicial) seleccionarEstado(estadoInicial);
     });
   } catch (e) {
     console.error('Error en init():', e);
-    const body = document.body;
-    const div = document.createElement('div');
-    div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;padding:12px;font-size:14px;z-index:999999;text-align:center';
-    div.textContent = 'Error: ' + e.message;
-    body.appendChild(div);
   }
 }
 

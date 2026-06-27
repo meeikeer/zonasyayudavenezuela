@@ -4,17 +4,21 @@ const pendingMarkers = [];
 let onMarkerClickCb = null;
 let onMapClickCb = null;
 
-// ─── Callbacks ───────────────────────────────────────────────────
-
 export function onMarkerClick(cb) { onMarkerClickCb = cb; }
 export function onMapClick(cb) { onMapClickCb = cb; }
 
-// ─── Inicializar mapa con Leaflet ───────────────────────────────
+const limitesVenezuela = [
+  [0.5, -73.5],
+  [12.5, -59.5]
+];
 
 export function initMap(containerId) {
   map = L.map(containerId, {
-    center: [7.0, -66.0],
+    center: [10.4806, -66.9036],
     zoom: 7,
+    minZoom: 6,
+    maxBounds: limitesVenezuela,
+    maxBoundsViscosity: 1.0,
     zoomControl: true,
     attributionControl: true
   });
@@ -37,8 +41,6 @@ export function initMap(containerId) {
   return map;
 }
 
-// ─── Geocoding con Nominatim (gratuito, sin API Key) ────────────
-
 export async function buscarDireccion(query) {
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=ve`;
   const res = await fetch(url, {
@@ -52,8 +54,6 @@ export async function buscarDireccion(query) {
     displayName: data[0].display_name
   };
 }
-
-// ─── Marcadores ──────────────────────────────────────────────────
 
 export function renderCentros(centros) {
   Object.values(markers).forEach(m => map.removeLayer(m));
@@ -119,7 +119,6 @@ function icono(categoria) {
       border-radius:50%;
       display:flex;align-items:center;justify-content:center;
       font-size:18px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.3);
       cursor:pointer;
     ">${emoji}</div>`,
     iconSize: [36, 36],
@@ -127,8 +126,6 @@ function icono(categoria) {
     tooltipAnchor: [0, -36]
   });
 }
-
-// ─── Ajustar vista ──────────────────────────────────────────────
 
 export function ajustarBounds(centros) {
   if (!map) return;
